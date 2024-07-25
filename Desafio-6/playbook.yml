@@ -1,0 +1,5 @@
+- name: Deployment de un sitio estatico
+  hosts: all
+  become: yes
+  roles:
+    - site_deployment

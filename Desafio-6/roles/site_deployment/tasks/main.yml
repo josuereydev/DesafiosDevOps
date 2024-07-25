@@ -1,0 +1,58 @@
+- name: Verificar si el OS es Ubuntu
+  set_fact:
+    is_ubuntu: "{{ ansible_distribution == 'Ubuntu' }}"
+
+- name: Actualizar el cache de paquetes
+  apt:
+    update_cache: yes
+  when: is_ubuntu
+
+- name: Instalar Apache2
+  apt:
+    name: apache2
+    state: present
+  when: is_ubuntu
+
+- name: Verificar que apache este corriendo
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+  when: is_ubuntu
+
+- name: Crear directorio para el sitio
+  file:
+    path: /var/www/html/ansible_site
+    state: directory
+    owner: www-data
+    group: www-data
+  when: is_ubuntu
+
+- name: Copiar index.html al directorio del sitio
+  copy:
+    src: index.html
+    dest: /var/www/html/ansible_site
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: is_ubuntu
+
+- name: Configuración del sitio apache
+  template:
+    src: ansible_site.conf.j2
+    dest: /etc/apache2/sites-available/ansible_site.conf
+  notify:
+    - Reload Apache
+  when: is_ubuntu
+
+- name: Activa el nuevo sitio
+  command: a2ensite ansible_site.conf
+  notify:
+    - Reload Apache
+  when: is_ubuntu
+
+- name: Deshabilita el sitio default
+  command: a2dissite 000-default.conf
+  notify:
+    - Reload Apache
+  when: is_ubuntu
